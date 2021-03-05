@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "lib/packet.h"
+#include "lib/packet/packet.h"
 #include "Sensors.h"
 
 enum class State {
