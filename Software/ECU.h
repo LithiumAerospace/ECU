@@ -1,8 +1,6 @@
 #ifndef ECU_H
 #define ECU_H
 
-#include <iostream>
-
 #include "lib/packet/packet.h"
 #include "Sensors.h"
 
@@ -18,7 +16,7 @@ private:
 	State old_state;
 	Sensors* sensors;
 
-	void(*caller)(std::string);
+	void(*caller)(char *);
 
 	Packet* getInfo();
 	void sendTelem();
@@ -29,11 +27,10 @@ private:
 
 	void setState(State new_state);
 public:
-	ECU(void(*s)(std::string));
+	ECU(void(*s)(char *));
 
 	void tick(int delta);
 	void handlePacket(Packet* p);
-	void handlePacket(std::string s);
 };
 
 #endif /* ECU_H */

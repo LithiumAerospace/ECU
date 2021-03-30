@@ -2,11 +2,16 @@
 
 #include "conf.h"
 
+#if defined(ARDUINO)
+#include "Arduino.h"
+#else
 #include <cstdio>
+#include <cstring>
+#endif
 
-void digitalWrite(std::string n, bool v);
+void digitalWrite(int n, bool v);
 
-ECU::ECU(void(*s)(std::string)) :
+ECU::ECU(void(*s)(char *)) :
 		state(State::IDLE),
 		old_state(State::IDLE),
 		caller(s),
@@ -15,7 +20,6 @@ ECU::ECU(void(*s)(std::string)) :
 }
 
 void ECU::tick(int delta) {
-	//printf("%i\n", delta);
 	sensors->update();
 	deltatelem += delta;
 	if (deltatelem >= TELEMRATEMS) {
@@ -25,17 +29,17 @@ void ECU::tick(int delta) {
 	if (old_state != state) {
 		switch (state) {
 			case State::IDLE:
-				digitalWrite("fuelvalve", false);
-				digitalWrite("oxygenvalve", false);
-				digitalWrite("igniter", false); // incase shutdown was sent before ignition finishes
+				digitalWrite(FV_PIN, false);
+				digitalWrite(OV_PIN, false);
+				digitalWrite(IGN_PIN, false); // incase shutdown was sent before ignition finishes
 				break;
 			case State::IGNITION:
-				digitalWrite("fuelvalve", true);
-				digitalWrite("oxygenvalve", true);
-				digitalWrite("igniter", true);
+				digitalWrite(FV_PIN, true);
+				digitalWrite(OV_PIN, true);
+				digitalWrite(IGN_PIN, true);
 				break;
 			case State::FIRING:
-				digitalWrite("igniter", false);
+				digitalWrite(IGN_PIN, false);
 				break;
 		}
 		old_state = state;
@@ -63,7 +67,9 @@ void ECU::setState(State new_state) {
 void ECU::handlePacket(Packet* p) {
 	switch (p->get_type()) {
 		case PacketType::INFO:
-			caller(this->getInfo()->encode());
+			char buf[256];
+			this->getInfo()->encode(buf);
+			caller(buf);
 			break;
 		case PacketType::IGNITION:
 			if (state == State::IGNITION || state == State::FIRING) {
@@ -86,29 +92,20 @@ void ECU::handlePacket(Packet* p) {
 	}
 }
 
-void ECU::handlePacket(std::string s) {
-	this->handlePacket(Packet::decode(s));
-}
-
 Packet* ECU::getInfo() {
 	Packet* out = new Packet();
 	out->set_type(PacketType::INFO);
-	std::string data;
-	char temp[6];
-	sprintf(temp, "%d", PROTOCOL_VERSION);
-	data += temp;
-	data += ",";
-	sprintf(temp, "%d", ENG_MODEL);
-	data += temp;
-	data += ",";
-	sprintf(temp, "%d", SERIAL_NUM);
-	data += temp;
-	data += ",";
-	sprintf(temp, "%d", SOFTWARE_VERSION);
-	data += temp;
-	data += ",";
-	sprintf(temp, "%d", HARDWARE_VERSION);
-	data += temp;
+	char data[200];
+	sprintf(data, "%d", PROTOCOL_VERSION);
+	strcat(data, ",");
+	sprintf(data + strlen(data), "%d", ENG_MODEL);
+	strcat(data, ",");
+	sprintf(data + strlen(data), "%d", SERIAL_NUM);
+	strcat(data, ",");
+	sprintf(data + strlen(data), "%d", SOFTWARE_VERSION);
+	strcat(data, ",");
+	sprintf(data + strlen(data), "%d", HARDWARE_VERSION);
+	strcat(data, ",");
 	out->set_data(data);
 	return out;
 }
@@ -122,14 +119,22 @@ void ECU::sendTelem() {
 		(int) old_state,
 		sensors->mock_value_1
 	);
-	p->set_data(std::string(buf));
-	caller(p->encode());
+	p->set_data(buf);
+	char out[256];
+  p->encode(out);
+  caller(out);
 }
 
 void ECU::ack(Packet* p) {
 	Packet* out = new Packet();
 	out->set_type(PacketType::ACK);
-	std::string temp = p->encode();
-	out->set_data(temp.substr(temp.length() - 5, 4));
-	caller(out->encode());
+	char temp[256];
+	p->encode(temp);
+	char old_checksum[5];
+  memcpy( old_checksum, &temp[strlen(temp) - 5], 4 );
+  old_checksum[4] = '\0';
+	out->set_data(old_checksum);
+  char buf[256];
+  out->encode(buf);
+	caller(buf);
 }

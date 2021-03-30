@@ -1,10 +1,12 @@
-#include "ECU.h"
+#include "../ECU.h"
 
 #include <iostream>
 #include <cstring>
 
 void print_info(std::string info) {
 	std::cout << "protocol_version 0x" << stoul(info.substr(0, info.find(",")), nullptr, 16) << '\n';
+	info.erase(0, info.find(",") + 1);
+	std::cout << "eng_model 0x" << stoul(info.substr(0, info.find(",")), nullptr, 16) << '\n';
 	info.erase(0, info.find(",") + 1);
 	std::cout << "serial_num 0x" << stoul(info.substr(0, info.find(",")), nullptr, 16) << '\n';
 	info.erase(0, info.find(",") + 1);
@@ -39,8 +41,8 @@ void send(PacketType type) {
 	ecu->handlePacket(p->encode());
 }
 
-void digitalWrite(std::string name, bool state) {
-	std::cout << name << " " << state << '\n';
+void digitalWrite(int pin, bool state) {
+	std::cout << pin << " " << state << '\n';
 }
 
 int main(int argc, char const *argv[]) {

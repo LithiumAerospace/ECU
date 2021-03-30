@@ -12,7 +12,7 @@ all: ${OBJECTS}
 	${CC} -c $< -o $(<:%.cpp=%.o)
 
 test: all
-	@./test
+	@./test.out
 
 clean:
 	@rm -v *.o
