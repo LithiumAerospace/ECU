@@ -121,8 +121,8 @@ void ECU::sendTelem() {
 	);
 	p->set_data(buf);
 	char out[256];
-  p->encode(out);
-  caller(out);
+	p->encode(out);
+	caller(out);
 }
 
 void ECU::ack(Packet* p) {
@@ -131,10 +131,10 @@ void ECU::ack(Packet* p) {
 	char temp[256];
 	p->encode(temp);
 	char old_checksum[5];
-  memcpy( old_checksum, &temp[strlen(temp) - 5], 4 );
-  old_checksum[4] = '\0';
+	memcpy( old_checksum, &temp[strlen(temp) - 5], 4 );
+	old_checksum[4] = '\0';
 	out->set_data(old_checksum);
-  char buf[256];
-  out->encode(buf);
+	char buf[256];
+	out->encode(buf);
 	caller(buf);
 }
