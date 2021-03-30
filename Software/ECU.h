@@ -1,7 +1,11 @@
 #ifndef ECU_H
 #define ECU_H
 
+#if defined(ARDUINO)
+#include <packet.h>
+#else
 #include "lib/packet/packet.h"
+#endif
 #include "Sensors.h"
 
 enum class State {

@@ -9,7 +9,7 @@
 #include <cstring>
 #endif
 
-void digitalWrite(int n, bool v);
+//void digitalWrite(int n, bool v);
 
 ECU::ECU(void(*s)(char *)) :
 		state(State::IDLE),
