@@ -67,8 +67,9 @@ void ECU::setState(State new_state) {
 void ECU::handlePacket(Packet* p) {
 	switch (p->get_type()) {
 		case PacketType::INFO:
-			char buf[256];
-			this->getInfo()->encode(buf);
+                        Packet* p = this->getInfo();
+			char buf[p->length() + 1];
+			p->encode(buf);
 			caller(buf);
 			break;
 		case PacketType::IGNITION:
@@ -120,7 +121,7 @@ void ECU::sendTelem() {
 		sensors->mock_value_1
 	);
 	p->set_data(buf);
-	char out[256];
+	char out[p->length() + 1];
 	p->encode(out);
 	caller(out);
 }
@@ -134,7 +135,7 @@ void ECU::ack(Packet* p) {
 	memcpy( old_checksum, &temp[strlen(temp) - 5], 4 );
 	old_checksum[4] = '\0';
 	out->set_data(old_checksum);
-	char buf[256];
+	char buf[out->length() + 1];
 	out->encode(buf);
 	caller(buf);
 }
